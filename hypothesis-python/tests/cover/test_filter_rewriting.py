@@ -28,58 +28,7 @@ from hypothesis.strategies._internal.strategies import FilteredStrategy
 from tests.common.utils import fails_with
 
 
-@pytest.mark.parametrize(
-    "strategy, predicate, start, end",
-    [
-        # Finitude check
-        (st.integers(1, 5), math.isfinite, 1, 5),
-        # Integers with integer bounds
-        (st.integers(1, 5), partial(operator.lt, 3), 4, 5),  # lambda x: 3 < x
-        (st.integers(1, 5), partial(operator.le, 3), 3, 5),  # lambda x: 3 <= x
-        (st.integers(1, 5), partial(operator.eq, 3), 3, 3),  # lambda x: 3 == x
-        (st.integers(1, 5), partial(operator.ge, 3), 1, 3),  # lambda x: 3 >= x
-        (st.integers(1, 5), partial(operator.gt, 3), 1, 2),  # lambda x: 3 > x
-        # Integers with non-integer bounds
-        (st.integers(1, 5), partial(operator.lt, 3.5), 4, 5),
-        (st.integers(1, 5), partial(operator.le, 3.5), 4, 5),
-        (st.integers(1, 5), partial(operator.ge, 3.5), 1, 3),
-        (st.integers(1, 5), partial(operator.gt, 3.5), 1, 3),
-        (st.integers(1, 5), partial(operator.lt, -math.inf), 1, 5),
-        (st.integers(1, 5), partial(operator.gt, math.inf), 1, 5),
-        # Integers with only one bound
-        (st.integers(min_value=1), partial(operator.lt, 3), 4, None),
-        (st.integers(min_value=1), partial(operator.le, 3), 3, None),
-        (st.integers(max_value=5), partial(operator.ge, 3), None, 3),
-        (st.integers(max_value=5), partial(operator.gt, 3), None, 2),
-        # Unbounded integers
-        (st.integers(), partial(operator.lt, 3), 4, None),
-        (st.integers(), partial(operator.le, 3), 3, None),
-        (st.integers(), partial(operator.eq, 3), 3, 3),
-        (st.integers(), partial(operator.ge, 3), None, 3),
-        (st.integers(), partial(operator.gt, 3), None, 2),
-        # Simple lambdas
-        (st.integers(), lambda x: x < 3, None, 2),
-        (st.integers(), lambda x: x <= 3, None, 3),
-        (st.integers(), lambda x: x == 3, 3, 3),
-        (st.integers(), lambda x: x >= 3, 3, None),
-        (st.integers(), lambda x: x > 3, 4, None),
-        # Simple lambdas, reverse comparison
-        (st.integers(), lambda x: 3 > x, None, 2),
-        (st.integers(), lambda x: 3 >= x, None, 3),
-        (st.integers(), lambda x: 3 == x, 3, 3),
-        (st.integers(), lambda x: 3 <= x, 3, None),
-        (st.integers(), lambda x: 3 < x, 4, None),
-        # More complicated lambdas
-        (st.integers(), lambda x: 0 < x < 5, 1, 4),
-        (st.integers(), lambda x: 0 < x >= 1, 1, None),
-        (st.integers(), lambda x: 1 > x <= 0, None, 0),
-        (st.integers(), lambda x: x > 0 and x > 0, 1, None),
-        (st.integers(), lambda x: x < 1 and x < 1, None, 0),
-        (st.integers(), lambda x: x > 1 and x > 0, 2, None),
-        (st.integers(), lambda x: x < 1 and x < 2, None, 0),
-    ],
-    ids=get_pretty_function_description,
-)
+@pytest.mark.parametrize("strategy, predicate, start, end", [(st.integers(1, 5), math.isfinite, 1, 5), (st.integers(1, 5), partial(operator.lt, 3), 4, 5), (st.integers(1, 5), partial(operator.le, 3), 3, 5), (st.integers(1, 5), partial(operator.eq, 3), 3, 3), (st.integers(1, 5), partial(operator.ge, 3), 1, 3), (st.integers(1, 5), partial(operator.gt, 3), 1, 2), (st.integers(1, 5), partial(operator.lt, 3.5), 4, 5), (st.integers(1, 5), partial(operator.le, 3.5), 4, 5), (st.integers(1, 5), partial(operator.ge, 3.5), 1, 3), (st.integers(1, 5), partial(operator.gt, 3.5), 1, 3), (st.integers(1, 5), partial(operator.lt, -math.inf), 1, 5), (st.integers(1, 5), partial(operator.gt, math.inf), 1, 5), (st.integers(min_value=1), partial(operator.lt, 3), 4, None), (st.integers(min_value=1), partial(operator.le, 3), 3, None), (st.integers(max_value=5), partial(operator.ge, 3), None, 3), (st.integers(max_value=5), partial(operator.gt, 3), None, 2), (st.integers(), partial(operator.lt, 3), 4, None), (st.integers(), partial(operator.le, 3), 3, None), (st.integers(), partial(operator.eq, 3), 3, 3), (st.integers(), partial(operator.ge, 3), None, 3), (st.integers(), partial(operator.gt, 3), None, 2), (st.integers(), lambda x: x < 3, None, 2), (st.integers(), lambda x: x <= 3, None, 3), (st.integers(), lambda x: x == 3, 3, 3), (st.integers(), lambda x: x >= 3, 3, None), (st.integers(), lambda x: x > 3, 4, None), (st.integers(), lambda x: x < 3, None, 2), (st.integers(), lambda x: x <= 3, None, 3), (st.integers(), lambda x: x == 3, 3, 3), (st.integers(), lambda x: x >= 3, 3, None), (st.integers(), lambda x: x > 3, 4, None), (st.integers(), lambda x: 0 < x < 5, 1, 4), (st.integers(), lambda x: 0 < x >= 1, 1, None), (st.integers(), lambda x: 1 > x <= 0, None, 0), (st.integers(), lambda x: x > 0 and x > 0, 1, None), (st.integers(), lambda x: x < 1 and x < 1, None, 0), (st.integers(), lambda x: x > 1 and x > 0, 2, None), (st.integers(), lambda x: x < 1 and x < 2, None, 0)], ids=get_pretty_function_description)
 @given(data=st.data())
 def test_filter_rewriting_ints(data, strategy, predicate, start, end):
     s = strategy.filter(predicate)
@@ -91,58 +40,7 @@ def test_filter_rewriting_ints(data, strategy, predicate, start, end):
     assert predicate(value)
 
 
-@pytest.mark.parametrize(
-    "strategy, predicate, min_value, max_value",
-    [
-        # Floats with integer bounds
-        (st.floats(1, 5), partial(operator.lt, 3), next_up(3.0), 5),  # 3 < x
-        (st.floats(1, 5), partial(operator.le, 3), 3, 5),  # lambda x: 3 <= x
-        (st.floats(1, 5), partial(operator.eq, 3), 3, 3),  # lambda x: 3 == x
-        (st.floats(1, 5), partial(operator.ge, 3), 1, 3),  # lambda x: 3 >= x
-        (st.floats(1, 5), partial(operator.gt, 3), 1, next_down(3.0)),  # 3 > x
-        # Floats with non-integer bounds
-        (st.floats(1, 5), partial(operator.lt, 3.5), next_up(3.5), 5),
-        (st.floats(1, 5), partial(operator.le, 3.5), 3.5, 5),
-        (st.floats(1, 5), partial(operator.ge, 3.5), 1, 3.5),
-        (st.floats(1, 5), partial(operator.gt, 3.5), 1, next_down(3.5)),
-        (st.floats(1, 5), partial(operator.lt, -math.inf), 1, 5),
-        (st.floats(1, 5), partial(operator.gt, math.inf), 1, 5),
-        # Floats with only one bound
-        (st.floats(min_value=1), partial(operator.lt, 3), next_up(3.0), math.inf),
-        (st.floats(min_value=1), partial(operator.le, 3), 3, math.inf),
-        (st.floats(max_value=5), partial(operator.ge, 3), -math.inf, 3),
-        (st.floats(max_value=5), partial(operator.gt, 3), -math.inf, next_down(3.0)),
-        # Unbounded floats
-        (st.floats(), partial(operator.lt, 3), next_up(3.0), math.inf),
-        (st.floats(), partial(operator.le, 3), 3, math.inf),
-        (st.floats(), partial(operator.eq, 3), 3, 3),
-        (st.floats(), partial(operator.ge, 3), -math.inf, 3),
-        (st.floats(), partial(operator.gt, 3), -math.inf, next_down(3.0)),
-        # Simple lambdas
-        (st.floats(), lambda x: x < 3, -math.inf, next_down(3.0)),
-        (st.floats(), lambda x: x <= 3, -math.inf, 3),
-        (st.floats(), lambda x: x == 3, 3, 3),
-        (st.floats(), lambda x: x >= 3, 3, math.inf),
-        (st.floats(), lambda x: x > 3, next_up(3.0), math.inf),
-        # Simple lambdas, reverse comparison
-        (st.floats(), lambda x: 3 > x, -math.inf, next_down(3.0)),
-        (st.floats(), lambda x: 3 >= x, -math.inf, 3),
-        (st.floats(), lambda x: 3 == x, 3, 3),
-        (st.floats(), lambda x: 3 <= x, 3, math.inf),
-        (st.floats(), lambda x: 3 < x, next_up(3.0), math.inf),
-        # More complicated lambdas
-        (st.floats(), lambda x: 0 < x < 5, next_up(0.0), next_down(5.0)),
-        (st.floats(), lambda x: 0 < x >= 1, 1, math.inf),
-        (st.floats(), lambda x: 1 > x <= 0, -math.inf, 0),
-        (st.floats(), lambda x: x > 0 and x > 0, next_up(0.0), math.inf),
-        (st.floats(), lambda x: x < 1 and x < 1, -math.inf, next_down(1.0)),
-        (st.floats(), lambda x: x > 1 and x > 0, next_up(1.0), math.inf),
-        (st.floats(), lambda x: x < 1 and x < 2, -math.inf, next_down(1.0)),
-        # Specific named functions
-        (st.floats(), math.isfinite, next_up(-math.inf), next_down(math.inf)),
-    ],
-    ids=get_pretty_function_description,
-)
+@pytest.mark.parametrize("strategy, predicate, min_value, max_value", [(st.floats(1, 5), partial(operator.lt, 3), next_up(3.0), 5), (st.floats(1, 5), partial(operator.le, 3), 3, 5), (st.floats(1, 5), partial(operator.eq, 3), 3, 3), (st.floats(1, 5), partial(operator.ge, 3), 1, 3), (st.floats(1, 5), partial(operator.gt, 3), 1, next_down(3.0)), (st.floats(1, 5), partial(operator.lt, 3.5), next_up(3.5), 5), (st.floats(1, 5), partial(operator.le, 3.5), 3.5, 5), (st.floats(1, 5), partial(operator.ge, 3.5), 1, 3.5), (st.floats(1, 5), partial(operator.gt, 3.5), 1, next_down(3.5)), (st.floats(1, 5), partial(operator.lt, -math.inf), 1, 5), (st.floats(1, 5), partial(operator.gt, math.inf), 1, 5), (st.floats(min_value=1), partial(operator.lt, 3), next_up(3.0), math.inf), (st.floats(min_value=1), partial(operator.le, 3), 3, math.inf), (st.floats(max_value=5), partial(operator.ge, 3), -math.inf, 3), (st.floats(max_value=5), partial(operator.gt, 3), -math.inf, next_down(3.0)), (st.floats(), partial(operator.lt, 3), next_up(3.0), math.inf), (st.floats(), partial(operator.le, 3), 3, math.inf), (st.floats(), partial(operator.eq, 3), 3, 3), (st.floats(), partial(operator.ge, 3), -math.inf, 3), (st.floats(), partial(operator.gt, 3), -math.inf, next_down(3.0)), (st.floats(), lambda x: x < 3, -math.inf, next_down(3.0)), (st.floats(), lambda x: x <= 3, -math.inf, 3), (st.floats(), lambda x: x == 3, 3, 3), (st.floats(), lambda x: x >= 3, 3, math.inf), (st.floats(), lambda x: x > 3, next_up(3.0), math.inf), (st.floats(), lambda x: x < 3, -math.inf, next_down(3.0)), (st.floats(), lambda x: x <= 3, -math.inf, 3), (st.floats(), lambda x: x == 3, 3, 3), (st.floats(), lambda x: x >= 3, 3, math.inf), (st.floats(), lambda x: x > 3, next_up(3.0), math.inf), (st.floats(), lambda x: 0 < x < 5, next_up(0.0), next_down(5.0)), (st.floats(), lambda x: 0 < x >= 1, 1, math.inf), (st.floats(), lambda x: 1 > x <= 0, -math.inf, 0), (st.floats(), lambda x: x > 0 and x > 0, next_up(0.0), math.inf), (st.floats(), lambda x: x < 1 and x < 1, -math.inf, next_down(1.0)), (st.floats(), lambda x: x > 1 and x > 0, next_up(1.0), math.inf), (st.floats(), lambda x: x < 1 and x < 2, -math.inf, next_down(1.0)), (st.floats(), math.isfinite, next_up(-math.inf), next_down(math.inf))], ids=get_pretty_function_description)
 @given(data=st.data())
 def test_filter_rewriting_floats(data, strategy, predicate, min_value, max_value):
     s = strategy.filter(predicate)
@@ -280,21 +178,7 @@ lambda_without_source = eval("lambda x: x > 2", {}, {})
 assert get_pretty_function_description(lambda_without_source) == "lambda x: <unknown>"
 
 
-@pytest.mark.parametrize(
-    "start, end, predicate",
-    [
-        (1, 4, lambda x: 0 < x < 5 and x % 7),
-        (0, 9, lambda x: 0 <= x < 10 and x % 3),
-        (1, None, lambda x: 0 < x <= Y),
-        (None, None, lambda x: x == x),
-        (None, None, lambda x: 1 == 1),
-        (None, None, lambda x: 1 <= 2),
-        (None, None, lambda x: x != 0),
-        (None, None, NotAFunction()),
-        (None, None, lambda_without_source),
-        (None, None, lambda x, y=2: x >= 0),
-    ],
-)
+@pytest.mark.parametrize("start, end, predicate", [(1, 4, lambda x: 0 < x < 5 and x % 7), (0, 9, lambda x: 0 <= x < 10 and x % 3), (1, None, lambda x: 0 < x <= Y), (None, None, lambda x: x == x), (None, None, lambda x: True), (None, None, lambda x: 1 <= 2), (None, None, lambda x: x != 0), (None, None, NotAFunction()), (None, None, lambda_without_source), (None, None, lambda x, y=2: x >= 0)])
 @given(data=st.data())
 def test_rewriting_partially_understood_filters(data, start, end, predicate):
     s = st.integers().filter(predicate).wrapped_strategy

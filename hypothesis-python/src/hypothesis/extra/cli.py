@@ -112,16 +112,13 @@ else:
                     ) from err
 
         def describe_close_matches(
-            module_or_class: types.ModuleType, objname: str
-        ) -> str:
+                module_or_class: types.ModuleType, objname: str
+            ) -> str:
             public_names = [
                 name for name in vars(module_or_class) if not name.startswith("_")
             ]
             matches = get_close_matches(objname, public_names)
-            if matches:
-                return f"  Closest matches: {matches!r}"
-            else:
-                return ""
+            return f"  Closest matches: {matches!r}" if matches else ""
 
         if classname is None:
             try:
@@ -149,10 +146,7 @@ else:
             try:
                 return getattr(func_class, funcname)
             except AttributeError as err:
-                if inspect.isclass(func_class):
-                    func_class_is = "class"
-                else:
-                    func_class_is = "attribute"
+                func_class_is = "class" if inspect.isclass(func_class) else "attribute"
                 raise click.UsageError(
                     f"Found the {modulename!r} module and {classname!r} {func_class_is}, "
                     f"but it doesn't have a {funcname!r} attribute."

@@ -213,7 +213,7 @@ def test_pytest_reports_patch_file_location(pytester):
     pattern = f"`git apply ({fname_pat})` to add failing examples to your code\\."
     print(f"{pattern=}")
     print(f"result.stdout=\n{indent(str(result.stdout), '    ')}")
-    fname = re.search(pattern, str(result.stdout)).group(1)
+    fname = re.search(pattern, str(result.stdout))[1]
     patch = Path(pytester.path).joinpath(fname).read_text(encoding="utf-8")
     print(patch)
     assert ADDED_LINES in patch

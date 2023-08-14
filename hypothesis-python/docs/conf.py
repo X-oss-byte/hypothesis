@@ -119,14 +119,17 @@ from hypothesis.strategies import *
 # See http://sphinx-doc.org/ext/extlinks.html
 _repo = "https://github.com/HypothesisWorks/hypothesis/"
 extlinks = {
-    "commit": (_repo + "commit/%s", "commit %s"),
-    "gh-file": (_repo + "blob/master/%s", "%s"),
-    "gh-link": (_repo + "%s", "%s"),
-    "issue": (_repo + "issues/%s", "issue #%s"),
-    "pull": (_repo + "pull/%s", "pull request #%s"),
+    "commit": (f"{_repo}commit/%s", "commit %s"),
+    "gh-file": (f"{_repo}blob/master/%s", "%s"),
+    "gh-link": (f"{_repo}%s", "%s"),
+    "issue": (f"{_repo}issues/%s", "issue #%s"),
+    "pull": (f"{_repo}pull/%s", "pull request #%s"),
     "pypi": ("https://pypi.org/project/%s/", "%s"),
     "bpo": ("https://bugs.python.org/issue%s", "bpo-%s"),
-    "xp-ref": ("https://data-apis.org/array-api/latest/API_specification/%s", "%s"),
+    "xp-ref": (
+        "https://data-apis.org/array-api/latest/API_specification/%s",
+        "%s",
+    ),
     "wikipedia": ("https://en.wikipedia.org/wiki/%s", "%s"),
 }
 

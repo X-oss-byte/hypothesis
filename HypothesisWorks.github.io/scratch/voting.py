@@ -27,10 +27,7 @@ def plurality_winner(election):
     counts = Counter(vote[0] for vote in election)
     winning_score = max(counts.values())
     winners = [c for c, v in counts.items() if v == winning_score]
-    if len(winners) > 1:
-        return None
-    else:
-        return winners[0]
+    return None if len(winners) > 1 else winners[0]
 
 
 def irv_winner(election):
@@ -44,10 +41,7 @@ def irv_winner(election):
                     break
         losing_score = min(scores[c] for c in candidates)
         candidates = [c for c in candidates if scores[c] > losing_score]
-    if not candidates:
-        return None
-    else:
-        return candidates[0]
+    return None if not candidates else candidates[0]
 
 
 def differing_without_ties(election):
@@ -55,9 +49,7 @@ def differing_without_ties(election):
     if irv is None:
         return False
     plurality = plurality_winner(election)
-    if plurality is None:
-        return False
-    return irv != plurality
+    return False if plurality is None else irv != plurality
 
 
 def is_majority_dominated(election, c):

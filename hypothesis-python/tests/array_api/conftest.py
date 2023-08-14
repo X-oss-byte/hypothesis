@@ -108,8 +108,9 @@ def pytest_generate_tests(metafunc):
 def pytest_collection_modifyitems(config, items):
     for item in items:
         if "xps" in item.fixturenames:
-            markers = [m for m in item.own_markers if m.name == "xp_min_version"]
-            if markers:
+            if markers := [
+                m for m in item.own_markers if m.name == "xp_min_version"
+            ]:
                 assert len(markers) == 1  # sanity check
                 min_version: NominalVersion = markers[0].args[0]
                 xps_version: NominalVersion = item.callspec.params["xps"].api_version

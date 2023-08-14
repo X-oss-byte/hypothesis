@@ -282,7 +282,7 @@ def _strategy_for(param: inspect.Parameter, docstring: str) -> st.SearchStrategy
         match = re.search(pattern, docstring, flags=re.MULTILINE)
         if match is None:
             continue
-        doc_type = match.group(1)
+        doc_type = match[1]
         if doc_type.endswith(", optional"):
             # Convention to describe "argument may be omitted"
             doc_type = doc_type[: -len(", optional")]
@@ -370,15 +370,15 @@ def _guess_strategy_by_argname(name: str) -> st.SearchStrategy:
     arguments in https://github.com/HypothesisWorks/hypothesis/issues/3311
     """
     # Special-cased names
-    if name in ("function", "func", "f"):
+    if name in {"function", "func", "f"}:
         return st.functions()
-    if name in ("pred", "predicate"):
+    if name in {"pred", "predicate"}:
         return st.functions(returns=st.booleans(), pure=True)
-    if name in ("iterable",):
+    if name in {"iterable"}:
         return st.iterables(st.integers()) | st.iterables(st.text())
-    if name in ("list", "lst", "ls"):
+    if name in {"list", "lst", "ls"}:
         return st.lists(st.nothing())
-    if name in ("object",):
+    if name in {"object"}:
         return st.builds(object)
     if "uuid" in name:
         return st.uuids().map(str)
@@ -388,10 +388,10 @@ def _guess_strategy_by_argname(name: str) -> st.SearchStrategy:
         return st.booleans()
 
     # Names which imply that the value is a number, perhaps in a particular range
-    if name in ("amount", "threshold", "number", "num"):
+    if name in {"amount", "threshold", "number", "num"}:
         return st.integers() | st.floats()
 
-    if name in ("port",):
+    if name in {"port"}:
         return st.integers(0, 2**16 - 1)
     if (
         name.endswith("_size")
@@ -400,35 +400,42 @@ def _guess_strategy_by_argname(name: str) -> st.SearchStrategy:
         or name in POSITIVE_INTEGER_NAMES
     ):
         return st.integers(min_value=0)
-    if name in ("offset", "seed", "dim", "total", "priority"):
+    if name in {"offset", "seed", "dim", "total", "priority"}:
         return st.integers()
 
-    if name in ("learning_rate", "dropout", "dropout_rate", "epsilon", "eps", "prob"):
+    if name in {
+        "learning_rate",
+        "dropout",
+        "dropout_rate",
+        "epsilon",
+        "eps",
+        "prob",
+    }:
         return st.floats(0, 1)
-    if name in ("lat", "latitude"):
+    if name in {"lat", "latitude"}:
         return st.floats(-90, 90)
-    if name in ("lon", "longitude"):
+    if name in {"lon", "longitude"}:
         return st.floats(-180, 180)
-    if name in ("radius", "tol", "tolerance", "rate"):
+    if name in {"radius", "tol", "tolerance", "rate"}:
         return st.floats(min_value=0)
     if name in FLOAT_NAMES:
         return st.floats()
 
     # Names which imply that the value is a string
-    if name in ("host", "hostname"):
+    if name in {"host", "hostname"}:
         return domains()
-    if name in ("email",):
+    if name in {"email"}:
         return st.emails()
-    if name in ("word", "slug", "api_key"):
+    if name in {"word", "slug", "api_key"}:
         return st.from_regex(r"\w+", fullmatch=True)
-    if name in ("char", "character"):
+    if name in {"char", "character"}:
         return st.characters()
 
     if (
         "file" in name
         or "path" in name
         or name.endswith("_dir")
-        or name in ("fname", "dir", "dirname", "directory", "folder")
+        or name in {"fname", "dir", "dirname", "directory", "folder"}
     ):
         # Common names for filesystem paths: these are usually strings, but we
         # don't want to make strings more convenient than pathlib.Path.
@@ -469,7 +476,7 @@ def _get_params(func: Callable) -> Dict[str, inspect.Parameter]:
             match = re.match(rf"^{func.__name__}\((.+?)\)", func.__doc__)
             if match is None:
                 raise
-            args = match.group(1).replace("[", "").replace("]", "")
+            args = match[1].replace("[", "").replace("]", "")
             params = []
             # Even if the signature doesn't contain a /, we assume that arguments
             # are positional-only until shown otherwise - the / is often omitted.
@@ -751,9 +758,7 @@ def _get_qualname(obj, include_module=False):
     # Replacing angle-brackets for objects defined in `.<locals>.`
     qname = getattr(obj, "__qualname__", obj.__name__)
     qname = qname.replace("<", "_").replace(">", "_").replace(" ", "")
-    if include_module:
-        return _get_module(obj) + "." + qname
-    return qname
+    return f"{_get_module(obj)}.{qname}" if include_module else qname
 
 
 def _write_call(
@@ -781,13 +786,15 @@ def _write_call(
     if assign:
         call = f"{assign} = {call}"
     raises = _exceptions_from_docstring(getattr(func, "__doc__", "") or "")
-    exnames = [ex.__name__ for ex in raises if not issubclass(ex, except_)]
-    if not exnames:
+    if exnames := [
+        ex.__name__ for ex in raises if not issubclass(ex, except_)
+    ]:
+        return SUPPRESS_BLOCK.format(
+            test_body=indent(call, prefix="    "),
+            exceptions="(" + ", ".join(exnames) + ")" if len(exnames) > 1 else exnames[0],
+        )
+    else:
         return call
-    return SUPPRESS_BLOCK.format(
-        test_body=indent(call, prefix="    "),
-        exceptions="(" + ", ".join(exnames) + ")" if len(exnames) > 1 else exnames[0],
-    )
 
 
 def _st_strategy_names(s: str) -> str:
@@ -819,7 +826,8 @@ def _make_test_body(
     # Get strategies for all the arguments to each function we're testing.
     with _with_any_registered():
         given_strategies = given_strategies or _get_strategies(
-            *funcs, pass_result_to_next_func=ghost in ("idempotent", "roundtrip")
+            *funcs,
+            pass_result_to_next_func=ghost in {"idempotent", "roundtrip"}
         )
         reprs = [((k,) + _valid_syntax_repr(v)) for k, v in given_strategies.items()]
         imports = imports.union(*(imp for _, imp, _ in reprs))
@@ -859,11 +867,7 @@ def _make_test_body(
     # For unittest-style, indent method further into a class body
     if style == "unittest":
         imports.add("unittest")
-        body = "class Test{}{}(unittest.TestCase):\n{}".format(
-            ghost.title(),
-            "".join(_get_qualname(f).replace(".", "").title() for f in funcs),
-            indent(body, "    "),
-        )
+        body = f'class Test{ghost.title()}{"".join(_get_qualname(f).replace(".", "").title() for f in funcs)}(unittest.TestCase):\n{indent(body, "    ")}'
 
     return imports, body
 
@@ -929,7 +933,7 @@ def _join_generics(
 
     # because typing.Optional is converted to a Union, it also contains None
     # since typing.Optional only accepts one type variable, we need to remove it
-    if origin_type_data is not None and origin_type_data[0] == "typing.Optional":
+    if origin_type_data[0] == "typing.Optional":
         annotations = (
             annotation
             for annotation in annotations
@@ -943,7 +947,7 @@ def _join_generics(
 
     arg_types, new_imports = joined
     imports.update(new_imports)
-    return _AnnotationData("{}[{}]".format(origin_type, ", ".join(arg_types)), imports)
+    return _AnnotationData(f'{origin_type}[{", ".join(arg_types)}]', imports)
 
 
 def _join_argument_annotations(
@@ -980,7 +984,7 @@ def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
         if joined is None:
             return None
         arg_type_names, new_imports = joined
-        return _AnnotationData("[{}]".format(", ".join(arg_type_names)), new_imports)
+        return _AnnotationData(f'[{", ".join(arg_type_names)}]', new_imports)
 
     if isinstance(parameter, type):
         if parameter.__module__ == "builtins":
@@ -994,11 +998,10 @@ def _parameter_to_annotation(parameter: Any) -> Optional[_AnnotationData]:
         # the types.UnionType does not support type arguments and needs to be translated
         if type_name == "types.UnionType":
             return _AnnotationData("typing.Union", {"typing"})
+    elif hasattr(parameter, "__module__") and hasattr(parameter, "__name__"):
+        type_name = _get_qualname(parameter, include_module=True)
     else:
-        if hasattr(parameter, "__module__") and hasattr(parameter, "__name__"):
-            type_name = _get_qualname(parameter, include_module=True)
-        else:
-            type_name = str(parameter)
+        type_name = str(parameter)
 
     origin_type = get_origin(parameter)
 
@@ -1059,7 +1062,7 @@ def _make_test(imports: ImportSet, body: str) -> str:
         if not (module.startswith("hypothesis.strategies") and name in st.__all__):
             from_imports[module].add(name)
     from_ = {
-        "from {} import {}".format(module, ", ".join(sorted(names)))
+        f'from {module} import {", ".join(sorted(names))}'
         for module, names in from_imports.items()
         if isinstance(module, str) and module not in do_not_import
     }
@@ -1135,10 +1138,7 @@ def magic(
         if callable(thing):
             functions.add(thing)
             # class need to be added for exploration
-            if inspect.isclass(thing):
-                funcs: List[Optional[Any]] = [thing]
-            else:
-                funcs = []
+            funcs = [thing] if inspect.isclass(thing) else []
         elif isinstance(thing, types.ModuleType):
             if hasattr(thing, "__all__"):
                 funcs = [getattr(thing, name, None) for name in thing.__all__]
@@ -1167,7 +1167,7 @@ def magic(
                     and not k.startswith("_")
                 ]
         for f in funcs:
-            try:
+            with contextlib.suppress(TypeError, ValueError):
                 if (
                     (not is_mock(f))
                     and callable(f)
@@ -1176,13 +1176,11 @@ def magic(
                 ):
                     functions.add(f)
                     if getattr(thing, "__name__", None):
-                        if inspect.isclass(thing):
-                            KNOWN_FUNCTION_LOCATIONS[f] = _get_module_helper(thing)
-                        else:
-                            KNOWN_FUNCTION_LOCATIONS[f] = thing.__name__
-            except (TypeError, ValueError):
-                pass
-
+                        KNOWN_FUNCTION_LOCATIONS[f] = (
+                            _get_module_helper(thing)
+                            if inspect.isclass(thing)
+                            else thing.__name__
+                        )
     if annotate is None:
         annotate = _are_annotations_used(*functions)
 
@@ -1196,13 +1194,9 @@ def magic(
 
     by_name = {}
     for f in functions:
-        try:
+        with contextlib.suppress(Exception):
             _get_params(f)
             by_name[_get_qualname(f, include_module=True)] = f
-        except Exception:
-            # usually inspect.signature on C code such as socket.inet_aton, sometimes
-            # e.g. Pandas 'CallableDynamicDoc' object has no attribute '__name__'
-            pass
     if not by_name:
         return (
             f"# Found no testable functions in\n"
@@ -1679,17 +1673,17 @@ def _make_binop_body(
     operands, b = (strategies.pop(p) for p in list(_get_params(func))[:2])
     if repr(operands) != repr(b):
         operands |= b
-    operands_name = func.__name__ + "_operands"
+    operands_name = f"{func.__name__}_operands"
 
     all_imports = set()
     parts = []
 
     def maker(
-        sub_property: str,
-        args: str,
-        body: str,
-        right: Optional[str] = None,
-    ) -> None:
+            sub_property: str,
+            args: str,
+            body: str,
+            right: Optional[str] = None,
+        ) -> None:
         if right is None:
             assertions = ""
         else:
@@ -1698,11 +1692,14 @@ def _make_binop_body(
         imports, body = _make_test_body(
             func,
             test_body=body,
-            ghost=sub_property + "_binary_operation",
+            ghost=f"{sub_property}_binary_operation",
             except_=except_,
             assertions=assertions,
             style=style,
-            given_strategies={**strategies, **{n: operands_name for n in args}},
+            given_strategies={
+                **strategies,
+                **{n: operands_name for n in args},
+            },
             annotate=annotate,
         )
         all_imports.update(imports)
@@ -1768,7 +1765,7 @@ def _make_binop_body(
         )
     if distributes_over:
         maker(
-            distributes_over.__name__ + "_distributes_over",
+            f"{distributes_over.__name__}_distributes_over",
             "abc",
             _write_call(
                 distributes_over,
@@ -1793,7 +1790,7 @@ def _make_binop_body(
         classdef = f"class TestBinaryOperation{func.__name__}(unittest.TestCase):\n    "
     return (
         all_imports,
-        classdef + f"{operands_name} = {operands_repr}\n" + "\n".join(parts),
+        f"{classdef}{operands_name} = {operands_repr}\n" + "\n".join(parts),
     )
 
 

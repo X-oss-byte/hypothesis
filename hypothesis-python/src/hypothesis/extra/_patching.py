@@ -57,7 +57,7 @@ def dedent(text):
     # Simplified textwrap.dedent, for valid Python source code only
     text = _space_only_re.sub("", text)
     prefix = min(_leading_space_re.findall(text), key=len)
-    return re.sub(r"(?m)^" + prefix, "", text), prefix
+    return re.sub(f"(?m)^{prefix}", "", text), prefix
 
 
 def indent(text: str, prefix: str) -> str:

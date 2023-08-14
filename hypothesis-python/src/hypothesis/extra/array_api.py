@@ -86,8 +86,7 @@ DataType = TypeVar("DataType")
 
 @check_function
 def check_xp_attributes(xp: Any, attributes: List[str]) -> None:
-    missing_attrs = [attr for attr in attributes if not hasattr(xp, attr)]
-    if len(missing_attrs) > 0:
+    if missing_attrs := [attr for attr in attributes if not hasattr(xp, attr)]:
         f_attrs = ", ".join(missing_attrs)
         raise InvalidArgument(
             f"Array module {xp.__name__} does not have required attributes: {f_attrs}"
@@ -157,7 +156,7 @@ def find_castable_builtin_for_dtype(
             return complex
         stubs.extend(complex_stubs)
 
-    if len(stubs) > 0:
+    if stubs:
         warn_on_missing_dtypes(xp, stubs)
     raise InvalidArgument(f"dtype={dtype} not recognised in {xp.__name__}")
 
@@ -278,7 +277,7 @@ def _from_dtype(
             kw["allow_subnormal"] = allow_subnormal
         else:
             subnormal = next_down(finfo.smallest_normal, width=finfo.bits)
-            ftz = bool(xp.asarray(subnormal, dtype=dtype) == 0)
+            ftz = xp.asarray(subnormal, dtype=dtype) == 0
             if ftz:
                 kw["allow_subnormal"] = False
 
@@ -570,10 +569,7 @@ def _arrays(
 
     if fill is None:
         assert isinstance(elements, st.SearchStrategy)  # for mypy
-        if unique or not elements.has_reusable_values:
-            fill = st.nothing()
-        else:
-            fill = elements
+        fill = st.nothing() if unique or not elements.has_reusable_values else elements
     check_strategy(fill, "fill")
 
     return ArrayStrategy(
@@ -589,8 +585,8 @@ def _arrays(
 
 @check_function
 def check_dtypes(xp: Any, dtypes: List[DataType], stubs: List[str]) -> None:
-    if len(dtypes) == 0:
-        assert len(stubs) > 0, "No dtypes passed but stubs is empty"
+    if not dtypes:
+        assert stubs, "No dtypes passed but stubs is empty"
         f_stubs = ", ".join(stubs)
         raise InvalidArgument(
             f"Array module {xp.__name__} does not have the following "
@@ -644,9 +640,8 @@ def check_valid_sizes(
     f_valid_sizes = ", ".join(str(s) for s in valid_sizes)
     f_invalid_sizes = ", ".join(str(s) for s in invalid_sizes)
     check_argument(
-        len(invalid_sizes) == 0,
-        f"The following sizes are not valid for {category} dtypes: "
-        f"{f_invalid_sizes} (valid sizes: {f_valid_sizes})",
+        not invalid_sizes,
+        f"The following sizes are not valid for {category} dtypes: {f_invalid_sizes} (valid sizes: {f_valid_sizes})",
     )
 
 

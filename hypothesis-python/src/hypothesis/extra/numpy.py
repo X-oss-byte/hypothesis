@@ -395,10 +395,7 @@ class ArrayStrategy(st.SearchStrategy):
 @check_function
 def fill_for(elements, unique, fill, name=""):
     if fill is None:
-        if unique or not elements.has_reusable_values:
-            fill = st.nothing()
-        else:
-            fill = elements
+        fill = st.nothing() if unique or not elements.has_reusable_values else elements
     else:
         check_strategy(fill, f"{name}.fill" if name else "fill")
     return fill
@@ -572,7 +569,7 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
     if "{}" not in kind:
         kind += "{}"
     if endianness == "?":
-        return strat.map(("<" + kind).format) | strat.map((">" + kind).format)
+        return strat.map(f"<{kind}".format) | strat.map(f">{kind}".format)
     return strat.map((endianness + kind).format)
 
 
@@ -1010,8 +1007,7 @@ def _unpack_generic(thing):
 
 
 def _unpack_dtype(dtype):
-    dtype_args = getattr(dtype, "__args__", ())
-    if dtype_args:
+    if dtype_args := getattr(dtype, "__args__", ()):
         assert len(dtype_args) == 1
         if isinstance(dtype_args[0], TypeVar):
             # numpy.dtype[+ScalarType]
