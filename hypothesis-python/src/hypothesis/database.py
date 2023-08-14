@@ -226,7 +226,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         path = self._value_path(key, value)
         if not os.path.exists(path):
             suffix = binascii.hexlify(os.urandom(16)).decode("ascii")
-            tmpname = path + "." + suffix
+            tmpname = f"{path}.{suffix}"
             with open(tmpname, "wb") as o:
                 o.write(value)
             try:
@@ -314,7 +314,7 @@ class MultiplexedDatabase(ExampleDatabase):
         self._wrapped = dbs
 
     def __repr__(self) -> str:
-        return "MultiplexedDatabase({})".format(", ".join(map(repr, self._wrapped)))
+        return f'MultiplexedDatabase({", ".join(map(repr, self._wrapped))})'
 
     def fetch(self, key: bytes) -> Iterable[bytes]:
         seen = set()
@@ -524,31 +524,27 @@ class GitHubArtifactDatabase(ExampleDatabase):
             < self.cache_timeout
         ):
             self._artifact = found_artifact
+        elif new_artifact := self._fetch_artifact():
+            if found_artifact is not None:
+                found_artifact.unlink()
+            self._artifact = new_artifact
+        elif found_artifact is not None:
+            warnings.warn(
+                HypothesisWarning(
+                    "Using an expired artifact as a fallback for the database: "
+                    f"{found_artifact}"
+                )
+            )
+            self._artifact = found_artifact
         else:
-            # Download the latest artifact from GitHub
-            new_artifact = self._fetch_artifact()
-
-            if new_artifact:
-                if found_artifact is not None:
-                    found_artifact.unlink()
-                self._artifact = new_artifact
-            elif found_artifact is not None:
-                warnings.warn(
-                    HypothesisWarning(
-                        "Using an expired artifact as a fallback for the database: "
-                        f"{found_artifact}"
-                    )
+            warnings.warn(
+                HypothesisWarning(
+                    "Couldn't acquire a new or existing artifact. "
+                    "Disabling database."
                 )
-                self._artifact = found_artifact
-            else:
-                warnings.warn(
-                    HypothesisWarning(
-                        "Couldn't acquire a new or existing artifact. "
-                        "Disabling database."
-                    )
-                )
-                self._disabled = True
-                return
+            )
+            self._disabled = True
+            return
 
         self._prepare_for_io()
 
@@ -636,7 +632,7 @@ class GitHubArtifactDatabase(ExampleDatabase):
         except KeyError:
             pass
 
-        directory = PurePath(_hash(key) + "/")
+        directory = PurePath(f"{_hash(key)}/")
         self.keypaths[key] = directory
         return directory
 

@@ -380,7 +380,9 @@ def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
     extra_kwargs = [
         k for k in given_kwargs if k not in {p.name for p in pos_params + kwonly_params}
     ]
-    if extra_kwargs and (params == [] or params[-1].kind is not params[-1].VAR_KEYWORD):
+    if extra_kwargs and (
+        not params or params[-1].kind is not params[-1].VAR_KEYWORD
+    ):
         arg = extra_kwargs[0]
         return invalid(
             f"{test.__name__}() got an unexpected keyword argument {arg!r}, "
@@ -389,12 +391,11 @@ def is_invalid_test(test, original_sig, given_arguments, given_kwargs):
     if any(p.default is not p.empty for p in params):
         return invalid("Cannot apply @given to a function with defaults.")
 
-    # This case would raise Unsatisfiable *anyway*, but by detecting it here we can
-    # provide a much more helpful error message for people e.g. using the Ghostwriter.
-    empty = [
-        f"{s!r} (arg {idx})" for idx, s in enumerate(given_arguments) if s is NOTHING
-    ] + [f"{name}={s!r}" for name, s in given_kwargs.items() if s is NOTHING]
-    if empty:
+    if empty := [
+        f"{s!r} (arg {idx})"
+        for idx, s in enumerate(given_arguments)
+        if s is NOTHING
+    ] + [f"{name}={s!r}" for name, s in given_kwargs.items() if s is NOTHING]:
         strats = "strategies" if len(empty) > 1 else "strategy"
         return invalid(
             f"Cannot generate examples from empty {strats}: " + ", ".join(empty),
@@ -445,7 +446,7 @@ def execute_explicit_examples(state, wrapped_test, arguments, kwargs, original_s
         # This is certainly true because the example_kwargs exactly match the params
         # reserved by @given(), which are then remove from the function signature.
         assert set(example_kwargs).isdisjoint(kwargs)
-        example_kwargs.update(kwargs)
+        example_kwargs |= kwargs
 
         if Phase.explicit not in state.settings.phases:
             continue
@@ -582,11 +583,9 @@ def process_arguments_to_given(wrapped_test, arguments, kwargs, given_kwargs, pa
     selfy = None
     arguments, kwargs = convert_positional_arguments(wrapped_test, arguments, kwargs)
 
-    # If the test function is a method of some kind, the bound object
-    # will be the first named argument if there are any, otherwise the
-    # first vararg (if any).
-    posargs = [p.name for p in params.values() if p.kind is p.POSITIONAL_OR_KEYWORD]
-    if posargs:
+    if posargs := [
+        p.name for p in params.values() if p.kind is p.POSITIONAL_OR_KEYWORD
+    ]:
         selfy = kwargs.get(posargs[0])
     elif arguments:
         selfy = arguments[0]
@@ -775,11 +774,9 @@ class StateForActualGivenExecution:
                                     kwargs,
                                     force_split=True,
                                     arg_slices=argslices,
-                                    leading_comment=(
-                                        "# " + context.data.slice_comments[(0, 0)]
-                                        if (0, 0) in context.data.slice_comments
-                                        else None
-                                    ),
+                                    leading_comment=f"# {context.data.slice_comments[0, 0]}"
+                                    if (0, 0) in context.data.slice_comments
+                                    else None,
                                 )
                             report(printer.getvalue())
                         return test(*args, **kwargs)
@@ -880,27 +877,26 @@ class StateForActualGivenExecution:
                 # block somewhere, suppressing our original StopTest.
                 # We raise a new one here to resume normal operation.
                 raise StopTest(data.testcounter) from e
-            else:
-                # The test failed by raising an exception, so we inform the
-                # engine that this test run was interesting. This is the normal
-                # path for test runs that fail.
+            # The test failed by raising an exception, so we inform the
+            # engine that this test run was interesting. This is the normal
+            # path for test runs that fail.
 
-                tb = get_trimmed_traceback()
-                info = data.extra_information
-                info.__expected_traceback = format_exception(e, tb)
-                info.__expected_exception = e
-                verbose_report(info.__expected_traceback)
+            tb = get_trimmed_traceback()
+            info = data.extra_information
+            info.__expected_traceback = format_exception(e, tb)
+            info.__expected_exception = e
+            verbose_report(info.__expected_traceback)
 
-                self.failed_normally = True
+            self.failed_normally = True
 
-                interesting_origin = get_interesting_origin(e)
-                if trace:  # pragma: no cover
-                    # Trace collection is explicitly disabled under coverage.
-                    self.explain_traces[interesting_origin].add(trace)
-                if interesting_origin[0] == DeadlineExceeded:
-                    self.failed_due_to_deadline = True
-                    self.explain_traces.clear()
-                data.mark_interesting(interesting_origin)
+            interesting_origin = get_interesting_origin(e)
+            if trace:  # pragma: no cover
+                # Trace collection is explicitly disabled under coverage.
+                self.explain_traces[interesting_origin].add(trace)
+            if interesting_origin[0] == DeadlineExceeded:
+                self.failed_due_to_deadline = True
+                self.explain_traces.clear()
+            data.mark_interesting(interesting_origin)
 
     def run_engine(self):
         """Run the test function many times, on database input and generated
@@ -935,14 +931,16 @@ class StateForActualGivenExecution:
                 key=lambda d: sort_key(d.buffer),
                 reverse=True,
             )
-        else:
-            if runner.valid_examples == 0:
-                rep = get_pretty_function_description(self.test)
-                raise Unsatisfiable(f"Unable to satisfy assumptions of {rep}")
+        elif runner.valid_examples == 0:
+            rep = get_pretty_function_description(self.test)
+            raise Unsatisfiable(f"Unable to satisfy assumptions of {rep}")
 
         if not self.falsifying_examples:
             return
-        elif not (self.settings.report_multiple_bugs and pytest_shows_exceptiongroups):
+        elif (
+            not self.settings.report_multiple_bugs
+            or not pytest_shows_exceptiongroups
+        ):
             # Pretend that we only found one failure, by discarding the others.
             del self.falsifying_examples[:-1]
 

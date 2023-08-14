@@ -184,12 +184,11 @@ def format():
             shebang = None
             first = True
             in_header = True
-            for l in o.readlines():
+            for l in o:
                 if first:
                     first = False
                     if l[:2] == "#!":
                         shebang = l
-                        continue
                 elif in_header and l.rstrip() == last_header_line:
                     in_header = False
                     lines = []
@@ -237,11 +236,7 @@ def check_not_changed():
 
 @task()
 def compile_requirements(upgrade=False):
-    if upgrade:
-        extra = ["--upgrade", "--rebuild"]
-    else:
-        extra = []
-
+    extra = ["--upgrade", "--rebuild"] if upgrade else []
     for f in Path("requirements").glob("*.in"):
         out_file = f.with_suffix(".txt")
         pip_tool(
@@ -264,7 +259,7 @@ def compile_requirements(upgrade=False):
         for p in f.read_text(encoding="utf-8").splitlines():
             p = p.lower().replace("_", "-")
             if re.fullmatch(r"[a-z-]+", p):
-                assert p + "==" in out_pkgs, f"Package `{p}` deleted from {out_file}"
+                assert f"{p}==" in out_pkgs, f"Package `{p}` deleted from {out_file}"
 
 
 def update_python_versions():
@@ -277,7 +272,7 @@ def update_python_versions():
     min_minor_version = re.search(
         r'python_requires=">= ?3.(\d+)"',
         Path("hypothesis-python/setup.py").read_text(encoding="utf-8"),
-    ).group(1)
+    )[1]
     best = {}
     for line in map(str.strip, result.splitlines()):
         if m := re.match(r"(?:pypy)?3\.(?:[789]|\d\d)", line):
@@ -379,7 +374,7 @@ def run_tox(task, version, *args):
     env = dict(os.environ)
     python = install.python_executable(version)
 
-    env["PATH"] = os.path.dirname(python) + ":" + env["PATH"]
+    env["PATH"] = f"{os.path.dirname(python)}:" + env["PATH"]
     print(env["PATH"])
 
     pip_tool("tox", "-e", task, *args, env=env, cwd=hp.HYPOTHESIS_PYTHON)
@@ -444,7 +439,7 @@ def tox(*args):
 
 
 def standard_tox_task(name, *args, py=ci_version):
-    TASKS["check-" + name] = python_tests(
+    TASKS[f"check-{name}"] = python_tests(
         lambda: run_tox(name, PYTHONS.get(py, py), *args)
     )
 
@@ -574,7 +569,7 @@ def audit_conjecture_rust():
 def tasks():
     """Print a list of all task names supported by the build system."""
     for task_name in sorted(TASKS.keys()):
-        print("    " + task_name)
+        print(f"    {task_name}")
 
 
 if __name__ == "__main__":

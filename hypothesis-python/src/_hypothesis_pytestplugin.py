@@ -127,7 +127,7 @@ else:
         )
 
     def _any_hypothesis_option(config):
-        return bool(any(config.getoption(opt) for opt in _ALL_OPTIONS))
+        return any((config.getoption(opt) for opt in _ALL_OPTIONS))
 
     def pytest_report_header(config):
         if not (
@@ -152,8 +152,7 @@ else:
             return
         from hypothesis import Phase, Verbosity, core, settings
 
-        profile = config.getoption(LOAD_PROFILE_OPTION)
-        if profile:
+        if profile := config.getoption(LOAD_PROFILE_OPTION):
             settings.load_profile(profile)
         verbosity_name = config.getoption(VERBOSITY_OPTION)
         if verbosity_name and verbosity_name != settings.default.verbosity.name:
@@ -311,15 +310,9 @@ else:
             stats = item.hypothesis_statistics
             stats_base64 = base64.b64encode(stats.encode()).decode()
 
-            name = "hypothesis-statistics-" + item.nodeid
+            name = f"hypothesis-statistics-{item.nodeid}"
 
-            # Include hypothesis information to the junit XML report.
-            #
-            # Note that when `pytest-xdist` is enabled, `xml_key` is not present in the
-            # stash, so we don't add anything to the junit XML report in that scenario.
-            # https://github.com/pytest-dev/pytest/issues/7767#issuecomment-1082436256
-            xml = _stash_get(item.config, xml_key, None)
-            if xml:
+            if xml := _stash_get(item.config, xml_key, None):
                 xml.add_global_property(name, stats_base64)
 
             # If there's a terminal report, include our summary stats for each test
@@ -357,8 +350,7 @@ else:
                 stats = report.__dict__.get(STATS_KEY)
                 if stats and print_stats:
                     terminalreporter.write_line(stats + "\n\n")
-                fex = report.__dict__.get(FAILING_EXAMPLES_KEY)
-                if fex:
+                if fex := report.__dict__.get(FAILING_EXAMPLES_KEY):
                     failing_examples.append(json.loads(fex))
 
         if failing_examples:

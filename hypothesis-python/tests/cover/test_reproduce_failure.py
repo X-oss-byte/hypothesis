@@ -135,7 +135,7 @@ def test_prints_reproduction_if_requested():
 
     exp = re.compile(r"reproduce_failure\(([^)]+)\)", re.MULTILINE)
     extract = exp.search(notes)
-    reproduction = eval(extract.group(0))
+    reproduction = eval(extract[0])
     test = reproduction(test)
 
     with pytest.raises(AssertionError):

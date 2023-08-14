@@ -165,7 +165,7 @@ def test_draw_timing(draw_delay, test_delay):
         assert "< 1ms" in stats
     else:
         match = re.search(r"of which ~ (?P<gentime>\d+)", stats)
-        assert 49 <= int(match.group("gentime")) <= 51
+        assert 49 <= int(match["gentime"]) <= 51
 
 
 def test_has_lambdas_in_output():

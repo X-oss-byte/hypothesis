@@ -75,24 +75,22 @@ class IntegersStrategy(SearchStrategy):
         if self.start is None:
             if self.end <= 0:
                 return self.end - abs(d.unbounded_integers(data))
-            else:
-                probe = self.end + 1
-                while self.end < probe:
-                    data.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = d.unbounded_integers(data)
-                    data.stop_example(discard=self.end < probe)
-                return probe
+            probe = self.end + 1
+            while self.end < probe:
+                data.start_example(ONE_BOUND_INTEGERS_LABEL)
+                probe = d.unbounded_integers(data)
+                data.stop_example(discard=self.end < probe)
+            return probe
 
         if self.end is None:
             if self.start >= 0:
                 return self.start + abs(d.unbounded_integers(data))
-            else:
-                probe = self.start - 1
-                while probe < self.start:
-                    data.start_example(ONE_BOUND_INTEGERS_LABEL)
-                    probe = d.unbounded_integers(data)
-                    data.stop_example(discard=probe < self.start)
-                return probe
+            probe = self.start - 1
+            while probe < self.start:
+                data.start_example(ONE_BOUND_INTEGERS_LABEL)
+                probe = d.unbounded_integers(data)
+                data.stop_example(discard=probe < self.start)
+            return probe
 
         # For bounded integers, make the bounds and near-bounds more likely.
         forced = None
@@ -125,9 +123,7 @@ class IntegersStrategy(SearchStrategy):
             if start is not None and end is not None and start > end:
                 return nothing()
             self = type(self)(start, end)
-        if pred is None:
-            return self
-        return super().filter(pred)
+        return self if pred is None else super().filter(pred)
 
 
 @cacheable
@@ -274,13 +270,7 @@ class FloatStrategy(SearchStrategy):
             self.forced_sign_bit = 1 if self.neg_clamper else 0
 
     def __repr__(self):
-        return "{}(min_value={}, max_value={}, allow_nan={}, smallest_nonzero_magnitude={})".format(
-            self.__class__.__name__,
-            self.min_value,
-            self.max_value,
-            self.allow_nan,
-            self.smallest_nonzero_magnitude,
-        )
+        return f"{self.__class__.__name__}(min_value={self.min_value}, max_value={self.max_value}, allow_nan={self.allow_nan}, smallest_nonzero_magnitude={self.smallest_nonzero_magnitude})"
 
     def permitted(self, f):
         assert isinstance(f, float)
@@ -297,8 +287,7 @@ class FloatStrategy(SearchStrategy):
             data.start_example(flt.DRAW_FLOAT_LABEL)
             if i == 0:
                 result = flt.draw_float(data, forced_sign_bit=self.forced_sign_bit)
-                is_negative = flt.float_to_int(result) >> 63
-                if is_negative:
+                if is_negative := flt.float_to_int(result) >> 63:
                     clamped = -self.neg_clamper(-result)
                 else:
                     clamped = self.pos_clamper(result)
@@ -327,14 +316,9 @@ class FloatStrategy(SearchStrategy):
             )
         if condition is math.isinf:
             permitted_infs = [x for x in (-math.inf, math.inf) if self.permitted(x)]
-            if not permitted_infs:
-                return nothing()
-            return SampledFromStrategy(permitted_infs)
+            return nothing() if not permitted_infs else SampledFromStrategy(permitted_infs)
         if condition is math.isnan:
-            if not self.allow_nan:
-                return nothing()
-            return NanStrategy()
-
+            return nothing() if not self.allow_nan else NanStrategy()
         kwargs, pred = get_float_predicate_bounds(condition)
         if not kwargs:
             return super().filter(pred)
@@ -364,9 +348,7 @@ class FloatStrategy(SearchStrategy):
                 allow_nan=False,
                 smallest_nonzero_magnitude=self.smallest_nonzero_magnitude,
             )
-        if pred is None:
-            return self
-        return super().filter(pred)
+        return self if pred is None else super().filter(pred)
 
 
 @cacheable
@@ -421,7 +403,7 @@ def floats(
     check_type(bool, exclude_max, "exclude_max")
 
     if allow_nan is None:
-        allow_nan = bool(min_value is None and max_value is None)
+        allow_nan = min_value is None and max_value is None
     elif allow_nan and (min_value is not None or max_value is not None):
         raise InvalidArgument(f"Cannot have {allow_nan=}, with min_value or max_value")
 
@@ -545,7 +527,7 @@ def floats(
         raise InvalidArgument(msg)
 
     if allow_infinity is None:
-        allow_infinity = bool(min_value is None or max_value is None)
+        allow_infinity = min_value is None or max_value is None
     elif allow_infinity:
         if min_value is not None and max_value is not None:
             raise InvalidArgument(

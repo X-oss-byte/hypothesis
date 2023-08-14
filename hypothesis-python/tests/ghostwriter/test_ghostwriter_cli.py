@@ -60,7 +60,7 @@ def run(cmd, *, cwd=None):
     ],
 )
 def test_cli_python_equivalence(cli, code):
-    result = run("hypothesis write " + cli)
+    result = run(f"hypothesis write {cli}")
     result.check_returncode()
     cli_output = result.stdout.strip()
     assert not result.stderr
@@ -91,9 +91,9 @@ def test_cli_python_equivalence(cli, code):
 )
 def test_cli_too_many_functions(cli, err_msg):
     # Supplying multiple functions to writers that only cope with one
-    result = run("hypothesis write " + cli)
+    result = run(f"hypothesis write {cli}")
     assert result.returncode == 2
-    assert "Error: " + err_msg in result.stderr
+    assert f"Error: {err_msg}" in result.stderr
     assert ("Closest matches" in err_msg) == ("Closest matches" in result.stderr)
 
 

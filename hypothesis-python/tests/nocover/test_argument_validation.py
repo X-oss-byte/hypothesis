@@ -22,8 +22,7 @@ BAD_ARGS = []
 
 def adjust(ex, **kwargs):
     f, a, b = ex
-    b = dict(b)
-    b.update(kwargs)
+    b = dict(b) | kwargs
     BAD_ARGS.append((f, a, b))
 
 

@@ -90,10 +90,7 @@ def exponent_key(e: int) -> float:
     if e == MAX_EXPONENT:
         return float("inf")
     unbiased = e - BIAS
-    if unbiased < 0:
-        return 10000 - unbiased
-    else:
-        return unbiased
+    return 10000 - unbiased if unbiased < 0 else unbiased
 
 
 ENCODING_TABLE = array("H", sorted(range(MAX_EXPONENT + 1), key=exponent_key))
@@ -183,18 +180,16 @@ def update_mantissa(unbiased_exponent: int, mantissa: int) -> int:
 def lex_to_float(i: int) -> float:
     assert i.bit_length() <= 64
     has_fractional_part = i >> 63
-    if has_fractional_part:
-        exponent = (i >> 52) & ((1 << 11) - 1)
-        exponent = decode_exponent(exponent)
-        mantissa = i & MANTISSA_MASK
-        mantissa = update_mantissa(exponent - BIAS, mantissa)
+    if not has_fractional_part:
+        return float(i & ((1 << 56) - 1))
+    exponent = (i >> 52) & ((1 << 11) - 1)
+    exponent = decode_exponent(exponent)
+    mantissa = i & MANTISSA_MASK
+    mantissa = update_mantissa(exponent - BIAS, mantissa)
 
-        assert mantissa.bit_length() <= 52
+    assert mantissa.bit_length() <= 52
 
-        return int_to_float((exponent << 52) | mantissa)
-    else:
-        integral_part = i & ((1 << 56) - 1)
-        return float(integral_part)
+    return int_to_float((exponent << 52) | mantissa)
 
 
 def float_to_lex(f: float) -> int:
@@ -221,9 +216,7 @@ def is_simple(f: float) -> int:
         i = int(f)
     except (ValueError, OverflowError):
         return False
-    if i != f:
-        return False
-    return i.bit_length() <= 56
+    return False if i != f else i.bit_length() <= 56
 
 
 def draw_float(data: "ConjectureData", forced_sign_bit: Optional[int] = None) -> float:

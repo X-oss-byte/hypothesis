@@ -34,9 +34,6 @@ def test_exception_propagates_fine_from_strategy(e):
     @composite
     def interrupt_eventually(draw):
         raise e
-        # this line will not be executed, but must be here
-        # to pass draw function static reference check
-        return draw(none())
 
     @given(interrupt_eventually())
     def test_do_nothing(x):

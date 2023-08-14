@@ -27,8 +27,7 @@ run()
 # or that don't work on the current version of Python.
 collect_ignore_glob = ["django/*"]
 if sys.version_info < (3, 9):
-    collect_ignore_glob.append("cover/*py39*")
-    collect_ignore_glob.append("patching/*")
+    collect_ignore_glob.extend(("cover/*py39*", "patching/*"))
 if sys.version_info < (3, 10):
     collect_ignore_glob.append("cover/*py310*")
 

@@ -118,7 +118,7 @@ def identify_ftz_culprits():
     # report `a`.  On the other hand, if `a` does _not_ import `a.b`, as is the case
     # for `hypothesis.extra.*` modules, then `a` will not be in `triggering_modules`
     # and we'll report `a.b` here instead.
-    prefixes = tuple(n + "." for n in triggering_modules)
+    prefixes = tuple(f"{n}." for n in triggering_modules)
     result = {k for k in triggering_modules if not k.startswith(prefixes)}
 
     # Suppose that `bar` enables FTZ, and `foo` imports `bar`.  At this point we're

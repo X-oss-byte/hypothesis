@@ -39,9 +39,7 @@ ARRAY_CODES = ["B", "H", "I", "L", "Q", "O"]
 def array_or_list(
     code: str, contents: Iterable[int]
 ) -> "Union[List[int], array.ArrayType[int]]":
-    if code == "O":
-        return list(contents)
-    return array.array(code, contents)
+    return list(contents) if code == "O" else array.array(code, contents)
 
 
 def replace_all(
@@ -224,10 +222,7 @@ class LazySequenceCopy:
     def __getitem__(self, i: int) -> int:
         i = self.__check_index(i)
         default = self.__values[i]
-        if self.__mask is None:
-            return default
-        else:
-            return self.__mask.get(i, default)
+        return default if self.__mask is None else self.__mask.get(i, default)
 
     def __setitem__(self, i: int, v: int) -> None:
         i = self.__check_index(i)
